@@ -1,7 +1,7 @@
 package main
 
 import (
-	log "cool/logger"
+	log "cool/logging"
 	"flag"
 	"io"
 	"net/http"
@@ -26,8 +26,8 @@ var (
 func parse_args() bool {
 	var met string
 
-	flag.StringVar(&url, "url", url, "Dirección HTTP")
-	flag.StringVar(&path, "path", path, "Path de la dirección (se le adiciona a la URL base)")
+	flag.StringVar(&url, "u", url, "Dirección URL")
+	flag.StringVar(&path, "p", path, "Path de la dirección (se le adiciona a la URL base)")
 	flag.StringVar(&met, "m", "", "Metodo a usar (GET, POST, PUT, DELETE)")
 	flag.StringVar(&c_type, "ct", c_type, "Content type")
 	flag.StringVar(&body, "b", body, "Body de la petición (usar @ para leer desde archivos. Ej: @endp3.json)")
@@ -108,7 +108,6 @@ func main() {
 	if err != nil {
 		logger.LogFatal("error al realizar la solicitud", err, 2)
 	}
-	defer response.Body.Close()
 
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -118,4 +117,10 @@ func main() {
 	logger.LogResponse(response, r_t)
 
 	body_out.Write(data)
+	response.Body.Close()
+
+	code := response.StatusCode / 100
+	if code >= 300 {
+		os.Exit(code)
+	}
 }
