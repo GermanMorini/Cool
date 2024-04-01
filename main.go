@@ -1,10 +1,8 @@
 package main
 
 import (
-	"cool/logger"
-	"encoding/json"
+	log "cool/logger"
 	"flag"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -22,7 +20,7 @@ var (
 	no_out    bool      = false
 	json_logs bool      = false
 	body_out  io.Writer = os.Stdout
-	logger    Logger    = &StderrLogger{BaseLogger{os.Stderr}}
+	logger    log.Logger
 )
 
 func parse_args() bool {
@@ -42,22 +40,18 @@ func parse_args() bool {
 		url = "http://localhost:8080"
 	}
 
-	if json_logs {
-		logger = &JSONLogger{BaseLogger{os.Stderr}}
-	}
-
 	if body != "" {
 		method = "POST"
 
 		if body[0] == '@' {
 			file, err := os.Open(body[1:])
 			if err != nil {
-				logger.logFatal("error al abrir el archivo", err, 1)
+				logger.LogFatal("error al abrir el archivo", err, 1)
 			}
 
 			data, err := io.ReadAll(file)
 			if err != nil {
-				logger.logFatal("error al leer el archivo", err, 2)
+				logger.LogFatal("error al leer el archivo", err, 2)
 			}
 			file.Close()
 
@@ -67,11 +61,23 @@ func parse_args() bool {
 	if met != "" {
 		method = met
 	}
-	if quiet {
-		logger.SetOut(io.Discard)
-	}
 	if no_out {
 		body_out = io.Discard
+	}
+
+	base_logger := log.BaseLogger{
+		Logs_out: os.Stderr,
+		Url:      url,
+		Path:     path,
+		Method:   method,
+	}
+	if json_logs {
+		logger = &log.JSONLogger{base_logger}
+	} else {
+		logger = &log.StderrLogger{base_logger}
+	}
+	if quiet {
+		logger.SetOut(io.Discard)
 	}
 
 	return flag.Parsed()
@@ -100,16 +106,16 @@ func main() {
 	response, err := http.DefaultClient.Do(req)
 	r_t := time.Since(t)
 	if err != nil {
-		logger.logFatal("error al realizar la solicitud", err, 2)
+		logger.LogFatal("error al realizar la solicitud", err, 2)
 	}
 	defer response.Body.Close()
 
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
-		logger.logFatal("error al leer el body", err, 3)
+		logger.LogFatal("error al leer el body", err, 3)
 	}
 
-	logger.logResponse(response, r_t)
+	logger.LogResponse(response, r_t)
 
 	body_out.Write(data)
 }

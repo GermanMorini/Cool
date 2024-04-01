@@ -15,14 +15,15 @@ const (
 )
 
 type Logger interface {
-	logResponse(res *http.Response, r_time time.Duration)
-	logError(msg string, err error)
-	logFatal(msg string, err error, code int)
+	LogResponse(res *http.Response, r_time time.Duration)
+	LogError(msg string, err error)
+	LogFatal(msg string, err error, code int)
 	SetOut(o io.Writer)
 }
 
 type BaseLogger struct {
-	Logs_out io.Writer
+	Logs_out          io.Writer
+	Url, Path, Method string
 }
 type JSONLogger struct {
 	BaseLogger
@@ -31,20 +32,28 @@ type StderrLogger struct {
 	BaseLogger
 }
 
-func (stdL *StderrLogger) logError(msg string, err error) {
+func (stdL *StderrLogger) LogError(msg string, err error) {
 	fmt.Fprintln(stdL.Logs_out, ePfx+msg, err)
 }
 
-func (stdL *StderrLogger) logFatal(msg string, err error, code int) {
-	stdL.logError(msg, err)
+func (stdL *StderrLogger) LogFatal(msg string, err error, code int) {
+	stdL.LogError(msg, err)
 	os.Exit(code)
+}
+
+func (stdL *StderrLogger) LogResponse(res *http.Response, r_time time.Duration) {
+	fmt.Fprintf(stdL.Logs_out, "%s %s:\n\tResponse time: %s\n\tHTTP ver.: %s\n\tStatus: %s\n", stdL.Method, stdL.Url+stdL.Path, r_time.String(), res.Proto, res.Status)
+	for k, v := range res.Header {
+		fmt.Fprintf(stdL.Logs_out, "\t%s: %v\n", k, v)
+	}
+	stdL.Logs_out.Write([]byte("\n----------------------------------------------------------\n"))
 }
 
 func (stdL *StderrLogger) SetOut(o io.Writer) {
 	stdL.Logs_out = o
 }
 
-func (jL *JSONLogger) logError(msg string, err error) {
+func (jL *JSONLogger) LogError(msg string, err error) {
 	log := map[string]interface{}{
 		"error": err.Error(),
 		"msg":   msg,
@@ -54,19 +63,19 @@ func (jL *JSONLogger) logError(msg string, err error) {
 	jL.Logs_out.Write(jsonData)
 }
 
-func (jL *JSONLogger) logFatal(msg string, err error, code int) {
-	jL.logError(msg, err)
+func (jL *JSONLogger) LogFatal(msg string, err error, code int) {
+	jL.LogError(msg, err)
 	os.Exit(code)
 }
 
-func (jL *JSONLogger) logResponse(res *http.Response, r_time time.Duration) {
+func (jL *JSONLogger) LogResponse(res *http.Response, r_time time.Duration) {
 	log := map[string]interface{}{
 		"headers":  res.Header,
 		"http_ver": res.Proto,
 		"status":   res.Status,
 		"time":     r_time.String(),
-		"method":   memfn,
-		"url":      url + path,
+		"method":   jL.Method,
+		"url":      jL.Url + jL.Path,
 	}
 
 	jsonData, _ := json.Marshal(log)
@@ -75,11 +84,4 @@ func (jL *JSONLogger) logResponse(res *http.Response, r_time time.Duration) {
 
 func (jL *JSONLogger) SetOut(o io.Writer) {
 	jL.Logs_out = o
-}
-func (stdL *StderrLogger) logResponse(res *http.Response, r_time time.Duration) {
-	fmt.Fprintf(stdL.Logs_out, "%s %s:\n\tResponse time: %s\n\tHTTP ver.: %s\n\tStatus: %s\n", method, url+path, r_time.String(), res.Proto, res.Status)
-	for k, v := range res.Header {
-		fmt.Fprintf(stdL.Logs_out, "\t%s: %v\n", k, v)
-	}
-	stdL.Logs_out.Write([]byte("\n----------------------------------------------------------\n"))
 }
