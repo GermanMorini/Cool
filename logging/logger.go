@@ -25,10 +25,16 @@ type BaseLogger struct {
 	Logs_out          io.Writer
 	Url, Path, Method string
 }
+
 type JSONLogger struct {
 	BaseLogger
 }
+
 type StderrLogger struct {
+	BaseLogger
+}
+
+type ResponseTimeLogger struct {
 	BaseLogger
 }
 
@@ -84,4 +90,21 @@ func (jL *JSONLogger) LogResponse(res *http.Response, r_time time.Duration) {
 
 func (jL *JSONLogger) SetOut(o io.Writer) {
 	jL.Logs_out = o
+}
+
+func (rtL *ResponseTimeLogger) LogResponse(res *http.Response, r_time time.Duration) {
+	rtL.Logs_out.Write([]byte(r_time.String() + "\n"))
+}
+
+func (rtL *ResponseTimeLogger) LogError(msg string, err error) {
+	fmt.Fprintln(rtL.Logs_out, ePfx+msg, err)
+}
+
+func (rtL *ResponseTimeLogger) LogFatal(msg string, err error, code int) {
+	rtL.LogError(msg, err)
+	os.Exit(code)
+}
+
+func (rtL *ResponseTimeLogger) SetOut(o io.Writer) {
+	rtL.Logs_out = o
 }

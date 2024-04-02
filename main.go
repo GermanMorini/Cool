@@ -11,16 +11,17 @@ import (
 )
 
 var (
-	url       string    = os.Getenv("COOL_URL")
-	path      string    = ""
-	method    string    = "GET"
-	c_type    string    = "application/json"
-	body      string    = ""
-	quiet     bool      = false
-	no_out    bool      = false
-	json_logs bool      = false
-	body_out  io.Writer = os.Stdout
-	logger    log.Logger
+	url           string    = os.Getenv("COOL_URL")
+	path          string    = ""
+	method        string    = "GET"
+	c_type        string    = "application/json"
+	body          string    = ""
+	quiet         bool      = false
+	no_out        bool      = false
+	json_logs     bool      = false
+	response_time bool      = false
+	body_out      io.Writer = os.Stdout
+	logger        log.Logger
 )
 
 func parse_args() bool {
@@ -33,6 +34,7 @@ func parse_args() bool {
 	flag.StringVar(&body, "b", body, "Body de la petición (usar @ para leer desde archivos. Ej: @endp3.json)")
 	flag.BoolVar(&quiet, "q", quiet, "No imprimir headers e info (a stderr)")
 	flag.BoolVar(&no_out, "Q", no_out, "No imprimir body (a stdout)")
+	flag.BoolVar(&response_time, "rt", response_time, "Mide el tiempo de respuesta (no imprime el body)")
 	flag.BoolVar(&json_logs, "j", json_logs, "Logs en formato json")
 	flag.Parse()
 
@@ -46,7 +48,7 @@ func parse_args() bool {
 		if body[0] == '@' {
 			file, err := os.Open(body[1:])
 			if err != nil {
-				logger.LogFatal("error al abrir el archivo", err, 1)
+				logger.LogFatal("error al abrir el archivo", err, 2)
 			}
 
 			data, err := io.ReadAll(file)
@@ -71,11 +73,17 @@ func parse_args() bool {
 		Path:     path,
 		Method:   method,
 	}
-	if json_logs {
-		logger = &log.JSONLogger{base_logger}
-	} else {
-		logger = &log.StderrLogger{base_logger}
+
+	switch {
+	case response_time:
+		logger = &log.ResponseTimeLogger{BaseLogger: base_logger}
+		body_out = io.Discard
+	case json_logs:
+		logger = &log.JSONLogger{BaseLogger: base_logger}
+	default:
+		logger = &log.StderrLogger{BaseLogger: base_logger}
 	}
+
 	if quiet {
 		logger.SetOut(io.Discard)
 	}
@@ -111,7 +119,7 @@ func main() {
 
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
-		logger.LogFatal("error al leer el body", err, 3)
+		logger.LogFatal("error al leer el body", err, 2)
 	}
 
 	logger.LogResponse(response, r_t)
