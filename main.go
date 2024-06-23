@@ -128,7 +128,7 @@ func main() {
 	response.Body.Close()
 
 	code := response.StatusCode / 100
-	if code >= 300 {
+	if code >= 3 {
 		os.Exit(code)
 	}
 }
