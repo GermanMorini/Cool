@@ -100,6 +100,8 @@ func make_request() *http.Request {
 		req.Header.Set("Content-Type", c_type)
 	}
 
+	req.Header.Set("User-Agent", "cool/1.0")
+
 	return req
 }
 
@@ -110,12 +112,15 @@ func main() {
 	}
 
 	req := make_request()
+
 	t := time.Now()
 	response, err := http.DefaultClient.Do(req)
 	r_t := time.Since(t)
+
 	if err != nil {
 		logger.LogFatal("error al realizar la solicitud", err, 2)
 	}
+	defer response.Body.Close()
 
 	data, err := io.ReadAll(response.Body)
 	if err != nil {
@@ -123,12 +128,5 @@ func main() {
 	}
 
 	logger.LogResponse(response, r_t)
-
 	body_out.Write(data)
-	response.Body.Close()
-
-	code := response.StatusCode / 100
-	if code >= 3 {
-		os.Exit(code)
-	}
 }
