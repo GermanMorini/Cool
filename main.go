@@ -38,6 +38,8 @@ func parse_args() bool {
 	flag.BoolVar(&json_logs, "j", json_logs, "Logs en formato json")
 	flag.Parse()
 
+	met = strings.ToUpper(met)
+
 	if url == "" {
 		url = "http://localhost:8080"
 	}
