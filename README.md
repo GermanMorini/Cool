@@ -1,6 +1,6 @@
 # Cool
 
-Aplicacion estilo `curl` para realizar peticiones HTTP a una url
+Aplicacion estilo `curl` para realizar peticiones HTTP o HTTPS a una url
 
 ## Características
 
@@ -41,5 +41,7 @@ cool -q                                             # No imprime los logs
 cool -j                                             # Logs en formato json
 
 cool -rt                                            # Solo imprime el tiempo que tardó la consulta
+
+cool -H "Authorization: Bearer $TK"                 # Especifica headers (se puede usar varias veces para cada header)
 
 ~~~

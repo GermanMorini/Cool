@@ -11,16 +11,17 @@ import (
 )
 
 var (
-	url           string    = os.Getenv("COOL_URL")
-	path          string    = ""
-	method        string    = "GET"
-	c_type        string    = "application/json"
-	body          string    = ""
-	quiet         bool      = false
-	no_out        bool      = false
-	json_logs     bool      = false
-	response_time bool      = false
-	body_out      io.Writer = os.Stdout
+	url           string            = os.Getenv("COOL_URL")
+	path          string            = ""
+	method        string            = "GET"
+	c_type        string            = "application/json"
+	headers       map[string]string = make(map[string]string)
+	body          string            = ""
+	quiet         bool              = false
+	no_out        bool              = false
+	json_logs     bool              = false
+	response_time bool              = false
+	body_out      io.Writer         = os.Stdout
 	logger        log.Logger
 )
 
@@ -31,6 +32,14 @@ func parse_args() bool {
 	flag.StringVar(&path, "p", path, "Path de la dirección (se le adiciona a la URL base)")
 	flag.StringVar(&met, "m", "", "Metodo a usar (GET, POST, PUT, DELETE)")
 	flag.StringVar(&c_type, "ct", c_type, "Content type")
+	flag.Func("H", "Headers de la consulta", func(H string) error {
+		H = strings.TrimSpace(H)
+		k := strings.TrimSpace(strings.SplitN(H, ":", 2)[0])
+		v := strings.TrimSpace(strings.SplitN(H, ":", 2)[1])
+
+		headers[k] = v
+		return nil
+	})
 	flag.StringVar(&body, "b", body, "Body de la petición (usar @ para leer desde archivos. Ej: @endp3.json)")
 	flag.BoolVar(&quiet, "q", quiet, "No imprimir headers e info (a stderr)")
 	flag.BoolVar(&no_out, "Q", no_out, "No imprimir body (a stdout)")
@@ -103,6 +112,10 @@ func make_request() *http.Request {
 	}
 
 	req.Header.Set("User-Agent", "cool/1.0")
+
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
 
 	return req
 }
