@@ -4,11 +4,9 @@ Aplicacion estilo `curl` para realizar peticiones HTTP o HTTPS a una url
 
 ## Características
 
-- Permite enviar solicitudes GET, POST, PUT, DELETE, tambien medir el tiempo de respuesta, realizar logs para cada consulta, especificar body y mas
-- Por defecto imprime el body de la consulta a `Stdout` y los logs a `Stderr`, esto permite guardar por separado los logs/body
-- Permite usar logs en formato **JSON** o simplemente imprimir el tiempo de respuesta
-- Se puede usar una variable de entorno (`COOL_URL`) para especificar la URL por defecto, así no se debe especificar con cada consulta
-- Al especificar la flag `-b` se cambia el método automáticamente a `POST`, facilitando hacer consultas al no tener que especificar el método con cada consulta
+- Permite enviar solicitudes GET, POST, PUT, DELETE, o cualquier otra, midiendo el tiempo de respuesta e imprimiendo los headers de la respuesta
+- Por defecto imprime el body de la consulta a `Stdout` y los logs a `Stderr`, esto permite guardar por separado los logs del body
+- Al especificar la flag `-b` se cambia el método automáticamente a `POST` y se establece el header `Content-Type: application/json`, facilitando hacer consultas al no tener que especificar cada opción por separado
 
 ## Codigos de salida
 
@@ -16,15 +14,13 @@ Aplicacion estilo `curl` para realizar peticiones HTTP o HTTPS a una url
 - **1** error al parsear las flags
 - **2** error generico (en la conexión, al leer el body de un archivo, ...)
 
-## Flags
+## Ejemplos
 
 ~~~bash
 
 cool                                                # Consulta tipo GET a la dirección por defecto (http://localhost:8080)
 
-cool -u URL                                         # Indica una url
-
-cool -u URL -p PATH                                 # Indica un path
+cool URL                                            # Indica una url
 
 cool -m METHOD                                      # Metodo a utilizar (por defecto GET)
 
@@ -38,10 +34,6 @@ cool -Q                                             # No imprime el body
 
 cool -q                                             # No imprime los logs
 
-cool -j                                             # Logs en formato json
-
-cool -rt                                            # Solo imprime el tiempo que tardó la consulta
-
-cool -H "Authorization: Bearer $TK"                 # Especifica headers (se puede usar varias veces para cada header)
+cool -H "Authorization: Bearer $TOKEN"              # Especifica headers (se puede usar varias veces para cada header)
 
 ~~~
