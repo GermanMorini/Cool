@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 var (
@@ -18,6 +20,8 @@ var (
 	body_out    io.Writer = os.Stdout
 	no_out      bool      = false
 	quiet       bool      = false
+
+	ERRPF string = color.HiRedString("[ERROR] ") // prefijo de error
 )
 
 func parse_args() bool {
@@ -49,7 +53,7 @@ func parse_args() bool {
 
 			body_reader, err = os.Open(body[1:])
 			if err != nil {
-				log.Fatal("error al abrir el archivo", err, 2)
+				log.Fatal(ERRPF+"error al abrir el archivo", err, 2)
 			}
 		} else {
 			body_reader = strings.NewReader(body)
@@ -74,7 +78,7 @@ func parse_args() bool {
 		headers["Content-Type"] = c_type
 	}
 
-	headers["User-Agent"] = "cool/2.0"
+	headers["User-Agent"] = "cool/2.1"
 
 	return flag.Parsed()
 }
@@ -110,27 +114,35 @@ func main() {
 	r_t := time.Since(t)
 
 	if err != nil {
-		log.Fatal("error al realizar la solicitud", err, 2)
+		log.Fatal(ERRPF+"error al realizar la solicitud: ", err, 2)
 	}
 	defer res.Body.Close()
 
 	data, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Fatal("error al leer el body", err, 2)
+		log.Fatal(ERRPF+"error al leer el body: ", err, 2)
 	}
 
-	// imprimir headers, URL, método y demás info
-	log.Printf("%s %s:\n\tResponse time: %s\n\tHTTP ver.: %s\n\tStatus: %s\n",
-		method,
-		req.URL,
+	// imprimir info de la consulta
+	log.Printf("%s %s:\n",
+		color.BlueString(method),
+		color.YellowString(url),
+	)
+	for k, v := range headers {
+		log.Printf("\t%s: %v\n", color.GreenString(k), v)
+	}
+
+	// imprimir versión HTTP, URL, estado y demás info
+	log.Printf("%s %s %s:\n\t"+color.HiGreenString("Response time")+": %s\n",
+		color.BlueString(res.Proto),
+		color.YellowString(res.Request.URL.String()),
+		color.HiMagentaString(res.Status),
 		r_t.String(),
-		res.Proto,
-		res.Status,
 	)
 	for k, v := range res.Header {
-		log.Printf("\t%s: %v\n", k, v)
+		log.Printf("\t%s: %v\n", color.GreenString(k), v)
 	}
-	log.Println("\n------------------------------------------------------------------")
+	log.Println(color.HiBlackString("\n------------------------------------------------------------------"))
 
 	// imprimir el body
 	body_out.Write(data)
